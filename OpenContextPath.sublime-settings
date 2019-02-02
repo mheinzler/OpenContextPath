@@ -1,2 +1,4 @@
 {
+    // enable to print debug information to the console
+    "debug" : false
 }

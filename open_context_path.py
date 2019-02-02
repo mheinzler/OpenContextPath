@@ -1,11 +1,15 @@
 """Open file paths at the current cursor position."""
 
+import logging
 import os
 import re
 from itertools import chain
 
 import sublime
 import sublime_plugin
+
+
+log = logging.getLogger("OpenContextPath")
 
 
 class OpenContextPathCommand(sublime_plugin.TextCommand):
@@ -43,10 +47,12 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         path = os.path.normpath(path)
 
         if os.path.isdir(path):
+            log.debug("Opening directory: %s", path)
             window.run_command("open_dir", {
                 "dir": path
             })
         else:
+            log.debug("Opening file: %s", path)
             window.run_command("open_file", {
                 "file": path
             })
@@ -68,6 +74,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     def extract_path(self, text, cur):
         """Extract a file path around a cursor position within a text."""
+        log.debug("Extracting from: %s^%s", text[:cur], text[cur:])
 
         # split the text into possible parts of a file path before and after
         # the cursor position
@@ -80,11 +87,15 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
             else:
                 after.append(part)
 
+        log.debug("Before cursor: %s", before)
+        log.debug("After cursor: %s", after)
+
         # go through the parts before the cursor to find the ones that mark the
         # beginning of a file path
         path = ""
         for i, part in reversed(list(enumerate(before))):
             if self.path_exists(part):
+                log.debug("Path: %s", part)
                 existing_path = part
 
                 # now find the longest path that can be constructed from all
@@ -93,6 +104,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 for part in chain(before[i + 1:], after):
                     new_path += part
                     if self.path_exists(new_path):
+                        log.debug("Path: %s", new_path)
                         existing_path = new_path
 
                 # check if the cursor is actually inside the found path by
