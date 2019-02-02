@@ -1,5 +1,6 @@
 """Open file paths at the current cursor position."""
 
+import functools
 import logging
 import os
 import re
@@ -72,6 +73,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
         return self.extract_path(text, col)
 
+    @functools.lru_cache()
     def extract_path(self, text, cur):
         """Extract a file path around a cursor position within a text."""
         log.debug("Extracting from: %s^%s", text[:cur], text[cur:])
