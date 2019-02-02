@@ -53,6 +53,11 @@ class TestPathsUnix(BaseTestCase):
         )
     ])
 
+    def setUp(self):
+        """Set up the test environment."""
+        super().setUp()
+        self.command.file_parts = self.command.file_parts_unix
+
     def test_absolute_paths(self):
         """Testing absolute paths."""
         self.extract_paths([
@@ -69,6 +74,10 @@ class TestPathsUnix(BaseTestCase):
 
             # the whole path must be found
             ("/root/dir1/root/dir1/file^1.txt", "/root/dir1/root/dir1/file1.txt"),  # noqa: E501
+
+            # Windows drive letters and backslashes have no special meaning
+            ("C:/root/dir1/file1.txt^", "/root/dir1/file1.txt"),
+            ("/root/dir1/file1.txt^\\", "/root/dir1/file1.txt"),
 
             ("/root/dir1/file1.txt ^", ""),
             ("/root/dir1/file1^", ""),
@@ -93,6 +102,11 @@ class TestPathsWindows(BaseTestCase):
             comp for comp in re.split(r"(\\)", file) if comp != ""
         )
     ])
+
+    def setUp(self):
+        """Set up the test environment."""
+        super().setUp()
+        self.command.file_parts = self.command.file_parts_win
 
     def test_absolute_paths(self):
         """Testing absolute paths."""

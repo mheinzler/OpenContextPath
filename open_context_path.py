@@ -17,7 +17,11 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     """Open file paths at the current cursor position."""
 
     # the regex to split a text into individual parts of a possible path
-    file_parts = re.compile(r"([A-Z]:[/\\]+|\w+[/\\]*|\W)", re.IGNORECASE)
+    file_parts_unix = re.compile(r"(\w+/*|\W)", re.IGNORECASE)
+    file_parts_win = re.compile(r"([A-Z]:[/\\]+|\w+[/\\]*|\W)", re.IGNORECASE)
+
+    file_parts = (file_parts_unix if sublime.platform() != "windows"
+                  else file_parts_win)
 
     # the number of characters to analyze around the cursor
     context = 150
