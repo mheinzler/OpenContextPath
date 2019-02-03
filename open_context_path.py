@@ -29,7 +29,8 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def run(self, edit, event=None):
         """Run the command."""
         path = self.find_path(event)
-        self.open_path(path)
+        if path:
+            self.open_path(path)
 
     def is_enabled(self, event=None):
         """Whether the command is enabled."""
@@ -42,7 +43,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def description(self, event=None):
         """Describe the context menu entry."""
         path = self.find_path(event)
-        return "Open " + os.path.basename(os.path.normpath(path))
+        if path:
+            return "Open " + os.path.basename(os.path.normpath(path))
+
+        return ""
 
     def want_event(self):
         """Whether we need the event data."""
@@ -147,8 +151,11 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                     if len(existing_path) > len(path):
                         path = existing_path
 
-        # search again to return the full path for relative paths
-        return self.search_path(path, dirs)
+        if path:
+            # search again to return the full path for relative paths
+            return self.search_path(path, dirs)
+
+        return None
 
     def search_path(self, path, dirs):
         """Search for an existing path (possibly relative to dirs)."""
