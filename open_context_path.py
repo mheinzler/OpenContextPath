@@ -10,6 +10,7 @@ import sublime
 import sublime_plugin
 
 
+platform = sublime.platform()
 log = logging.getLogger("OpenContextPath")
 
 
@@ -20,8 +21,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     file_parts_unix = re.compile(r"(\w+/*|\W)", re.IGNORECASE)
     file_parts_win = re.compile(r"([A-Z]:[/\\]+|\w+[/\\]*|\W)", re.IGNORECASE)
 
-    file_parts = (file_parts_unix if sublime.platform() != "windows"
-                  else file_parts_win)
+    file_parts = (file_parts_unix if platform != "windows" else file_parts_win)
 
     # the number of characters to analyze around the cursor
     context = 150
@@ -134,6 +134,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     def path_exists(self, path):
         """Check if a path exists."""
+
+        # disable UNC paths on Windows
+        if platform == "windows" and path.startswith("\\\\"):
+            return False
 
         # absolute paths
         if os.path.isabs(path) and os.path.exists(path):
