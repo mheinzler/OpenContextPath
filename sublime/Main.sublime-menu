@@ -14,6 +14,13 @@
                                 "args": {
                                     "base_file": "${packages}/OpenContextPath/OpenContextPath.sublime-settings"
                                 }
+                            },
+                            {
+                                "caption": "Key Bindings",
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/OpenContextPath/sublime/Default ($platform).sublime-keymap"
+                                }
                             }
                         ]
                     }

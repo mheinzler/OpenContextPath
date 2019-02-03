@@ -26,16 +26,20 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     # the number of characters to analyze around the cursor
     context = 150
 
-    def run(self, edit, event):
+    def run(self, edit, event=None):
         """Run the command."""
         path = self.find_path(event)
         self.open_path(path)
 
-    def is_visible(self, event):
+    def is_enabled(self, event=None):
+        """Whether the command is enabled."""
+        return bool(self.find_path(event))
+
+    def is_visible(self, event=None):
         """Whether the context menu entry is visible."""
         return bool(self.find_path(event))
 
-    def description(self, event):
+    def description(self, event=None):
         """Describe the context menu entry."""
         path = self.find_path(event)
         return "Open " + os.path.basename(os.path.normpath(path))
@@ -62,12 +66,17 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 "file": path
             })
 
-    def find_path(self, event):
+    def find_path(self, event=None):
         """Find a file path at the position where the command was called."""
         view = self.view
 
-        # extract the text around the event's position
-        pt = view.window_to_text((event["x"], event["y"]))
+        if event:
+            # extract the text around the event's position
+            pt = view.window_to_text((event["x"], event["y"]))
+        else:
+            # extract the text around the cursor's position
+            pt = view.sel()[0].a
+
         line = view.line(pt)
         begin = max(line.a, pt - self.context)
         end = min(line.b, pt + self.context)
