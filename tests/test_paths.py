@@ -26,7 +26,7 @@ class BaseTestCase(TestCase):
                 cur = text.index("^")
                 text = text.replace("^", "")
 
-                extract = self.command.extract_path(text, cur)
+                extract = self.command.extract_path(text, cur, ())
                 self.assertEqual(extract, path,
                                  "text={} with cur={}".format(text, cur))
 

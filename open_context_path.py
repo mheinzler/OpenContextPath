@@ -66,6 +66,19 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 "file": path
             })
 
+    def get_directories(self):
+        """Collect the current list of directories from the settings."""
+        settings = sublime.load_settings("OpenContextPath.sublime-settings")
+        view_settings = self.view.settings()
+
+        # give the view settings precedence over the global settings
+        dirs = view_settings.get("ocp_directories", [])
+        dirs += settings.get("directories", [])
+
+        # return a tuple because lists are not hashable and don't work with the
+        # cache
+        return tuple(dirs)
+
     def find_path(self, event=None):
         """Find a file path at the position where the command was called."""
         view = self.view
@@ -84,12 +97,16 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         text = view.substr(sublime.Region(begin, end))
         col = pt - begin
 
-        return self.extract_path(text, col)
+        # get the current list of directories
+        dirs = self.get_directories()
+
+        return self.extract_path(text, col, dirs)
 
     @functools.lru_cache()
-    def extract_path(self, text, cur):
+    def extract_path(self, text, cur, dirs):
         """Extract a file path around a cursor position within a text."""
         log.debug("Extracting from: %s^%s", text[:cur], text[cur:])
+        log.debug("Directories: %s", dirs)
 
         # split the text into possible parts of a file path before and after
         # the cursor position
@@ -109,7 +126,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # beginning of a file path
         path = ""
         for i, part in reversed(list(enumerate(before))):
-            if self.path_exists(part):
+            if self.path_exists(part, dirs):
                 log.debug("Path: %s", part)
                 existing_path = part
 
@@ -118,7 +135,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 new_path = existing_path
                 for part in chain(before[i + 1:], after):
                     new_path += part
-                    if self.path_exists(new_path):
+                    if self.path_exists(new_path, dirs):
                         log.debug("Path: %s", new_path)
                         existing_path = new_path
 
@@ -132,15 +149,19 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
         return path
 
-    def path_exists(self, path):
-        """Check if a path exists."""
+    def path_exists(self, path, dirs):
+        """Check if a path exists (possibly relative to dirs)."""
 
         # disable UNC paths on Windows
         if platform == "windows" and path.startswith("\\\\"):
             return False
 
-        # absolute paths
-        if os.path.isabs(path) and os.path.exists(path):
-            return True
+        if os.path.isabs(path):  # absolute paths
+            if os.path.exists(path):
+                return True
+        else:  # relative paths
+            for dir in dirs:
+                if os.path.exists(os.path.join(dir, path)):
+                    return True
 
         return False

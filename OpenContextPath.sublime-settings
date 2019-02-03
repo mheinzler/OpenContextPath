@@ -1,4 +1,7 @@
 {
+    // a list of directories to consider when processing relative paths
+    "directories": [""],
+
     // enable to print debug information to the console
-    "debug" : false
+    "debug": false
 }
