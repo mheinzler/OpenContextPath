@@ -18,8 +18,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     """Open file paths at the current cursor position."""
 
     # the regex to split a text into individual parts of a possible path
-    file_parts_unix = re.compile(r"(\w+/*|\W)", re.IGNORECASE)
-    file_parts_win = re.compile(r"([A-Z]:[/\\]+|\w+[/\\]*|\W)", re.IGNORECASE)
+    file_parts_unix = re.compile(
+        r"((\w+|\.\.?)/*|\W)", re.IGNORECASE)
+    file_parts_win = re.compile(
+        r"([A-Z]:[/\\]+|(\w+|\.\.?)[/\\]*|\W)", re.IGNORECASE)
 
     file_parts = (file_parts_unix if platform != "windows" else file_parts_win)
 
@@ -159,6 +161,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     def search_path(self, path, dirs):
         """Search for an existing path (possibly relative to dirs)."""
+
+        # ignore special directories with no separator
+        if path in [".", ".."]:
+            return None
 
         # disable UNC paths on Windows
         if platform == "windows" and path.startswith("\\\\"):

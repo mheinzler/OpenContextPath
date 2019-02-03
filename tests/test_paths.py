@@ -100,6 +100,8 @@ class TestPathsUnix(BaseTestCase):
     def test_relative_paths(self):
         """Testing relative paths."""
         self.extract_paths([
+            ("./^", "/root/./"),
+            ("../^", "/root/../"),
             ("dir1/file^1.txt", "/root/dir1/file1.txt"),
             ("/dir1/file^1.txt", "/root/dir1/file1.txt"),
             ("sub/file^2.txt", "/root/dir2/sub/file2.txt"),
@@ -165,6 +167,8 @@ class TestPathsWindows(BaseTestCase):
     def test_relative_paths(self):
         """Testing relative paths."""
         self.extract_paths([
+            (".\\^", "C:\\dir2\\.\\"),
+            ("../^", "C:\\dir2\\../"),
             ("dir1\\file^1.txt", "C:\\dir1\\file1.txt"),
             ("\\dir1\\file^1.txt", "C:\\dir1\\file1.txt"),
             ("sub/file^2.txt", "C:\\dir2\\sub/file2.txt"),
