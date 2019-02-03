@@ -132,7 +132,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # beginning of a file path
         path = ""
         for i, part in reversed(list(enumerate(before))):
-            if self.search_path(part, dirs):
+            # in case we haven't found the beginning of a path yet, it could be
+            # that there is a file consisting of multiple parts in which case
+            # we just need to blindly start testing for this possibility
+            if path == "" or self.search_path(part, dirs):
                 log.debug("Path: %s", part)
                 existing_path = part
 
@@ -145,13 +148,18 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                         log.debug("Path: %s", new_path)
                         existing_path = new_path
 
-                # check if the cursor is actually inside the found path by
-                # summing up the elements before and within the path
-                len_before_path = len("".join(before[:i]))
-                if len_before_path + len(existing_path) >= cur:
-                    # keep the longest path
-                    if len(existing_path) > len(path):
-                        path = existing_path
+                # we need to test this path again if we skipped that above
+                if path != "" or self.search_path(existing_path, dirs):
+                    log.debug("Found path: %s", existing_path)
+
+                    # check if the cursor is actually inside the found path by
+                    # summing up the elements before and within the path
+                    len_before_path = len("".join(before[:i]))
+                    if len_before_path + len(existing_path) >= cur:
+                        # keep the longest path
+                        if len(existing_path) > len(path):
+                            log.debug("Best path: %s", existing_path)
+                            path = existing_path
 
         if path:
             # search again to return the full path for relative paths

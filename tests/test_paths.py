@@ -62,7 +62,7 @@ class TestPathsUnix(BaseTestCase):
     ])
 
     # search paths
-    directories = ("/root", "/root/dir2/")
+    directories = ("/root", "/root/dir2/", "/root/dir2/sub")
 
     def setUp(self):
         """Set up the test environment."""
@@ -109,6 +109,9 @@ class TestPathsUnix(BaseTestCase):
             ("../root/dir^1/", "/root/../root/dir1/"),
             (".^./dir1/file1.txt", "/root/dir2/../dir1/file1.txt"),
 
+            ("file^2.txt", "/root/dir2/sub/file2.txt"),
+            ("/root/dir1/file^2.txt", "/root/dir2/sub/file2.txt"),
+
             ("^", None),
 
             # we don't want to detect dots without a path separator
@@ -137,7 +140,7 @@ class TestPathsWindows(BaseTestCase):
     ])
 
     # search paths
-    directories = ("C:\\dir2", "C:\\")
+    directories = ("C:\\dir2", "C:\\", "C:\\dir2\\sub")
 
     def setUp(self):
         """Set up the test environment."""
@@ -175,6 +178,9 @@ class TestPathsWindows(BaseTestCase):
 
             ("..\\dir^2\\", "C:\\dir2\\..\\dir2\\"),
             (".^.\\dir1\\file1.txt", "C:\\dir2\\..\\dir1\\file1.txt"),
+
+            ("file^2.txt", "C:\\dir2\\sub\\file2.txt"),
+            ("C:\\dir1\\file^2.txt", "C:\\dir2\\sub\\file2.txt"),
 
             ("^", None),
 
