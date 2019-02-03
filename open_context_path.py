@@ -126,7 +126,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # beginning of a file path
         path = ""
         for i, part in reversed(list(enumerate(before))):
-            if self.path_exists(part, dirs):
+            if self.search_path(part, dirs):
                 log.debug("Path: %s", part)
                 existing_path = part
 
@@ -135,7 +135,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 new_path = existing_path
                 for part in chain(before[i + 1:], after):
                     new_path += part
-                    if self.path_exists(new_path, dirs):
+                    if self.search_path(new_path, dirs):
                         log.debug("Path: %s", new_path)
                         existing_path = new_path
 
@@ -147,21 +147,23 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                     if len(existing_path) > len(path):
                         path = existing_path
 
-        return path
+        # search again to return the full path for relative paths
+        return self.search_path(path, dirs)
 
-    def path_exists(self, path, dirs):
-        """Check if a path exists (possibly relative to dirs)."""
+    def search_path(self, path, dirs):
+        """Search for an existing path (possibly relative to dirs)."""
 
         # disable UNC paths on Windows
         if platform == "windows" and path.startswith("\\\\"):
-            return False
+            return None
 
         if os.path.isabs(path):  # absolute paths
             if os.path.exists(path):
-                return True
+                return path
         else:  # relative paths
             for dir in dirs:
-                if os.path.exists(os.path.join(dir, path)):
-                    return True
+                full_path = os.path.join(dir, path)
+                if os.path.exists(full_path):
+                    return full_path
 
-        return False
+        return None

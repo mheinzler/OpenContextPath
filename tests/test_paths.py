@@ -79,11 +79,11 @@ class TestPathsUnix(BaseTestCase):
             ("C:/root/dir1/file1.txt^", "/root/dir1/file1.txt"),
             ("/root/dir1/file1.txt^\\", "/root/dir1/file1.txt"),
 
-            ("/root/dir1/file1.txt ^", ""),
-            ("/root/dir1/file1^", ""),
-            ("/root/dir1/no^file", ""),
-            ("/root/nodir/file^1.txt", ""),
-            ("\\root\\dir1\\file1.^txt", "")
+            ("/root/dir1/file1.txt ^", None),
+            ("/root/dir1/file1^", None),
+            ("/root/dir1/no^file", None),
+            ("/root/nodir/file^1.txt", None),
+            ("\\root\\dir1\\file1.^txt", None)
         ])
 
 
@@ -122,10 +122,10 @@ class TestPathsWindows(BaseTestCase):
             ("C:\\dir1/file^1.txt:42:10", "C:\\dir1/file1.txt"),
             ("File '^C:/dir1\\file1.txt', line 42", "C:/dir1\\file1.txt"),
 
-            ("C:\\dir1\\file1.txt ^", ""),
-            ("C:\\dir1\\file1^", ""),
-            ("C:\\dir1\\no^file", ""),
-            ("C:\\nodir\\file^1.txt", "")
+            ("C:\\dir1\\file1.txt ^", None),
+            ("C:\\dir1\\file1^", None),
+            ("C:\\dir1\\no^file", None),
+            ("C:\\nodir\\file^1.txt", None)
         ])
 
     def path_exists(self, path):
