@@ -1,5 +1,8 @@
 """Test path detection."""
 
+import ntpath
+import os
+import posixpath
 import re
 
 from itertools import accumulate
@@ -18,25 +21,30 @@ class BaseTestCase(TestCase):
     def extract_paths(self, tests):
         """Run the command's extract_path on multiples texts."""
 
-        # test the paths with our own os.path.exists
-        with mock.patch("os.path.exists",
-                        side_effect=self.path_exists):
-            for text, path in tests:
-                # extract the cursor position
-                cur = text.index("^")
-                text = text.replace("^", "")
+        # replace the whole os.path module
+        with mock.patch.object(os, 'path', self.path_module):
+            # test the paths with our own os.path.exists
+            with mock.patch("os.path.exists", self.path_exists):
+                for text, path in tests:
+                    # extract the cursor position
+                    cur = text.index("^")
+                    text = text.replace("^", "")
 
-                extract = self.command.extract_path(text, cur)
-                self.assertEqual(extract, path,
-                                 "text={} with cur={}".format(text, cur))
+                    extract = self.command.extract_path(text, cur,
+                                                        self.directories)
+                    self.assertEqual(extract, path,
+                                     "text={} with cur={}".format(text, cur))
 
     def path_exists(self, path):
         """Check whether some virtual path exist."""
-        return path in self.paths
+        return os.path.normpath(path) in self.paths
 
 
 class TestPathsUnix(BaseTestCase):
     """Test path detection on Unix."""
+
+    # the path module we need for these tests
+    path_module = posixpath
 
     # a list of files for which we pretend that they exist
     virtual_files = [
@@ -52,6 +60,9 @@ class TestPathsUnix(BaseTestCase):
             comp for comp in re.split(r"(/)", file) if comp != ""
         )
     ])
+
+    # search paths
+    directories = ("/root", "/root/dir2/", "/root/dir2/sub")
 
     def setUp(self):
         """Set up the test environment."""
@@ -79,16 +90,41 @@ class TestPathsUnix(BaseTestCase):
             ("C:/root/dir1/file1.txt^", "/root/dir1/file1.txt"),
             ("/root/dir1/file1.txt^\\", "/root/dir1/file1.txt"),
 
-            ("/root/dir1/file1.txt ^", ""),
-            ("/root/dir1/file1^", ""),
-            ("/root/dir1/no^file", ""),
-            ("/root/nodir/file^1.txt", ""),
-            ("\\root\\dir1\\file1.^txt", "")
+            ("/root/dir1/file1.txt ^", None),
+            ("/root/dir1/file1^", None),
+            ("/root/dir1/no^file", None),
+            ("/root/nodir/file^1.txt", None),
+            ("\\root\\dir1\\file1.^txt", None)
+        ])
+
+    def test_relative_paths(self):
+        """Testing relative paths."""
+        self.extract_paths([
+            ("./^", "/root/./"),
+            ("../^", "/root/../"),
+            ("dir1/file^1.txt", "/root/dir1/file1.txt"),
+            ("/dir1/file^1.txt", "/root/dir1/file1.txt"),
+            ("sub/file^2.txt", "/root/dir2/sub/file2.txt"),
+
+            ("../root/dir^1/", "/root/../root/dir1/"),
+            (".^./dir1/file1.txt", "/root/dir2/../dir1/file1.txt"),
+
+            ("file^2.txt", "/root/dir2/sub/file2.txt"),
+            ("/root/dir1/file^2.txt", "/root/dir2/sub/file2.txt"),
+
+            ("^", None),
+
+            # we don't want to detect dots without a path separator
+            (".^", None),
+            ("..^", None)
         ])
 
 
 class TestPathsWindows(BaseTestCase):
     """Test path detection on Windows."""
+
+    # the path module we need for these tests
+    path_module = ntpath
 
     # a list of files for which we pretend that they exist
     virtual_files = [
@@ -102,6 +138,9 @@ class TestPathsWindows(BaseTestCase):
             comp for comp in re.split(r"(\\)", file) if comp != ""
         )
     ])
+
+    # search paths
+    directories = ("C:\\dir2", "C:\\", "C:\\dir2\\sub")
 
     def setUp(self):
         """Set up the test environment."""
@@ -122,16 +161,30 @@ class TestPathsWindows(BaseTestCase):
             ("C:\\dir1/file^1.txt:42:10", "C:\\dir1/file1.txt"),
             ("File '^C:/dir1\\file1.txt', line 42", "C:/dir1\\file1.txt"),
 
-            ("C:\\dir1\\file1.txt ^", ""),
-            ("C:\\dir1\\file1^", ""),
-            ("C:\\dir1\\no^file", ""),
-            ("C:\\nodir\\file^1.txt", "")
+            ("C:\\dir1\\file1.txt ^", None),
+            ("C:\\dir1\\file1^", None),
+            ("C:\\dir1\\no^file", None),
+            ("C:\\nodir\\file^1.txt", None)
         ])
 
-    def path_exists(self, path):
-        """Check whether some virtual path exist."""
+    def test_relative_paths(self):
+        """Testing relative paths."""
+        self.extract_paths([
+            (".\\^", "C:\\dir2\\.\\"),
+            ("../^", "C:\\dir2\\../"),
+            ("dir1\\file^1.txt", "C:\\dir1\\file1.txt"),
+            ("\\dir1\\file^1.txt", "C:\\dir1\\file1.txt"),
+            ("sub/file^2.txt", "C:\\dir2\\sub/file2.txt"),
 
-        # Windows allows slashes and backslashes
-        path = path.replace("/", "\\")
+            ("..\\dir^2\\", "C:\\dir2\\..\\dir2\\"),
+            (".^.\\dir1\\file1.txt", "C:\\dir2\\..\\dir1\\file1.txt"),
 
-        return path in self.paths
+            ("file^2.txt", "C:\\dir2\\sub\\file2.txt"),
+            ("C:\\dir1\\file^2.txt", "C:\\dir2\\sub\\file2.txt"),
+
+            ("^", None),
+
+            # we don't want to detect dots without a path separator
+            (".^", None),
+            ("..^", None)
+        ])

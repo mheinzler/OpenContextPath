@@ -18,8 +18,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     """Open file paths at the current cursor position."""
 
     # the regex to split a text into individual parts of a possible path
-    file_parts_unix = re.compile(r"(\w+/*|\W)", re.IGNORECASE)
-    file_parts_win = re.compile(r"([A-Z]:[/\\]+|\w+[/\\]*|\W)", re.IGNORECASE)
+    file_parts_unix = re.compile(
+        r"((\w+|\.\.?)/*|\W)", re.IGNORECASE)
+    file_parts_win = re.compile(
+        r"([A-Z]:[/\\]+|(\w+|\.\.?)[/\\]*|\W)", re.IGNORECASE)
 
     file_parts = (file_parts_unix if platform != "windows" else file_parts_win)
 
@@ -29,7 +31,8 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def run(self, edit, event=None):
         """Run the command."""
         path = self.find_path(event)
-        self.open_path(path)
+        if path:
+            self.open_path(path)
 
     def is_enabled(self, event=None):
         """Whether the command is enabled."""
@@ -42,7 +45,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def description(self, event=None):
         """Describe the context menu entry."""
         path = self.find_path(event)
-        return "Open " + os.path.basename(os.path.normpath(path))
+        if path:
+            return "Open " + os.path.basename(os.path.normpath(path))
+
+        return ""
 
     def want_event(self):
         """Whether we need the event data."""
@@ -66,6 +72,19 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 "file": path
             })
 
+    def get_directories(self):
+        """Collect the current list of directories from the settings."""
+        settings = sublime.load_settings("OpenContextPath.sublime-settings")
+        view_settings = self.view.settings()
+
+        # give the view settings precedence over the global settings
+        dirs = view_settings.get("ocp_directories", [])
+        dirs += settings.get("directories", [])
+
+        # return a tuple because lists are not hashable and don't work with the
+        # cache
+        return tuple(dirs)
+
     def find_path(self, event=None):
         """Find a file path at the position where the command was called."""
         view = self.view
@@ -84,12 +103,16 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         text = view.substr(sublime.Region(begin, end))
         col = pt - begin
 
-        return self.extract_path(text, col)
+        # get the current list of directories
+        dirs = self.get_directories()
+
+        return self.extract_path(text, col, dirs)
 
     @functools.lru_cache()
-    def extract_path(self, text, cur):
+    def extract_path(self, text, cur, dirs):
         """Extract a file path around a cursor position within a text."""
         log.debug("Extracting from: %s^%s", text[:cur], text[cur:])
+        log.debug("Directories: %s", dirs)
 
         # split the text into possible parts of a file path before and after
         # the cursor position
@@ -109,7 +132,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # beginning of a file path
         path = ""
         for i, part in reversed(list(enumerate(before))):
-            if self.path_exists(part):
+            # in case we haven't found the beginning of a path yet, it could be
+            # that there is a file consisting of multiple parts in which case
+            # we just need to blindly start testing for this possibility
+            if path == "" or self.search_path(part, dirs):
                 log.debug("Path: %s", part)
                 existing_path = part
 
@@ -118,29 +144,52 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 new_path = existing_path
                 for part in chain(before[i + 1:], after):
                     new_path += part
-                    if self.path_exists(new_path):
+                    if self.search_path(new_path, dirs):
                         log.debug("Path: %s", new_path)
                         existing_path = new_path
 
-                # check if the cursor is actually inside the found path by
-                # summing up the elements before and within the path
-                len_before_path = len("".join(before[:i]))
-                if len_before_path + len(existing_path) >= cur:
-                    # keep the longest path
-                    if len(existing_path) > len(path):
-                        path = existing_path
+                # we need to test this path again if we skipped that above
+                if path != "" or self.search_path(existing_path, dirs):
+                    log.debug("Found path: %s", existing_path)
 
-        return path
+                    # check if the cursor is actually inside the found path by
+                    # summing up the elements before and within the path
+                    len_before_path = len("".join(before[:i]))
+                    if len_before_path + len(existing_path) >= cur:
+                        # keep the longest path
+                        if len(existing_path) > len(path):
+                            log.debug("Best path: %s", existing_path)
+                            path = existing_path
 
-    def path_exists(self, path):
-        """Check if a path exists."""
+        if path:
+            # search again to return the full path for relative paths
+            return self.search_path(path, dirs)
 
-        # disable UNC paths on Windows
-        if platform == "windows" and path.startswith("\\\\"):
-            return False
+        return None
 
-        # absolute paths
-        if os.path.isabs(path) and os.path.exists(path):
-            return True
+    def search_path(self, path, dirs):
+        """Search for an existing path (possibly relative to dirs)."""
 
-        return False
+        # ignore special directories with no separator
+        if path in [".", ".."]:
+            return None
+
+        if platform == "windows":
+            # disable UNC paths on Windows
+            if path.startswith("\\\\"):
+                return None
+
+            # ignore spaces at the end of a path
+            if path.endswith(" "):
+                return None
+
+        if os.path.isabs(path):  # absolute paths
+            if os.path.exists(path):
+                return path
+        else:  # relative paths
+            for dir in dirs:
+                full_path = os.path.join(dir, path)
+                if os.path.exists(full_path):
+                    return full_path
+
+        return None
