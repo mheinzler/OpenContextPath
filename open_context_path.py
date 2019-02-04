@@ -67,6 +67,13 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 "dir": path
             })
         else:
+            if platform == "windows":
+                # Sublime Text has trouble opening Windows paths without a
+                # drive letter. We use abspath to fix that.
+                drive, tail = os.path.splitdrive(path)
+                if not drive:
+                    path = os.path.abspath(path)
+
             log.debug("Opening file: %s", path)
             window.run_command("open_file", {
                 "file": path
