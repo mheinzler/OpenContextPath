@@ -82,10 +82,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def get_directories(self):
         """Collect the current list of directories from the settings."""
         settings = sublime.load_settings("OpenContextPath.sublime-settings")
-        view_settings = self.view.settings()
+        view_settings = self.view.settings().get("open_context_path", {})
 
         # give the view settings precedence over the global settings
-        dirs = view_settings.get("ocp_directories", [])
+        dirs = view_settings.get("directories", [])
         dirs += settings.get("directories", [])
 
         # return a tuple because lists are not hashable and don't work with the
