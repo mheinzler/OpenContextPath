@@ -21,6 +21,13 @@
                                 "args": {
                                     "base_file": "${packages}/OpenContextPath/sublime/Default ($platform).sublime-keymap"
                                 }
+                            },
+                            {
+                                "caption": "Mouse Bindings",
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/OpenContextPath/sublime/Default.sublime-mousemap"
+                                }
                             }
                         ]
                     }
