@@ -25,9 +25,6 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     file_parts = (file_parts_unix if platform != "windows" else file_parts_win)
 
-    # the number of characters to analyze around the cursor
-    context = 150
-
     def run(self, edit, event=None):
         """Run the command."""
         path = self.find_path(event)
@@ -79,6 +76,18 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 "file": path
             })
 
+    def get_context(self):
+        """Return the current context setting."""
+        settings = sublime.load_settings("OpenContextPath.sublime-settings")
+        view_settings = self.view.settings().get("open_context_path", {})
+
+        # give the view settings precedence over the global settings
+        context = view_settings.get("context", None)
+        if not context:
+            context = settings.get("context", 100)
+
+        return context
+
     def get_directories(self):
         """Collect the current list of directories from the settings."""
         settings = sublime.load_settings("OpenContextPath.sublime-settings")
@@ -104,8 +113,11 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
             pt = view.sel()[0].a
 
         line = view.line(pt)
-        begin = max(line.a, pt - self.context)
-        end = min(line.b, pt + self.context)
+
+        # clip the text to the specified context
+        context = self.get_context()
+        begin = max(line.a, pt - context)
+        end = min(line.b, pt + context)
 
         text = view.substr(sublime.Region(begin, end))
         col = pt - begin

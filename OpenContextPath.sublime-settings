@@ -2,6 +2,9 @@
     // a list of directories to consider when processing relative paths
     "directories": [""],
 
+    // the number of characters to analyze around the cursor
+    "context": 100,
+
     // enable to print debug information to the console
     "debug": false
 }
