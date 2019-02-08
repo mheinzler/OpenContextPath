@@ -16,7 +16,14 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         """Set up the test environment."""
-        self.command = OpenContextPathCommand(None)
+
+        # mock a virtual view
+        view = mock.Mock(**{
+            # make the command use only the global settings
+            "settings.return_value": {}
+        })
+
+        self.command = OpenContextPathCommand(view)
 
     def extract_paths(self, tests):
         """Run the command's extract_path on multiples texts."""
@@ -25,15 +32,24 @@ class BaseTestCase(TestCase):
         with mock.patch.object(os, 'path', self.path_module):
             # test the paths with our own os.path.exists
             with mock.patch("os.path.exists", self.path_exists):
-                for text, path in tests:
+                for text, path, *tail in tests:
+                    info = tail[0] if tail else {}
+
                     # extract the cursor position
                     cur = text.index("^")
                     text = text.replace("^", "")
 
-                    extract = self.command.extract_path(text, cur,
-                                                        self.directories)
+                    # extract a path and parse the info
+                    extract, scope = self.command.extract_path(
+                        text, cur, self.directories)
+                    matched_info = self.command.match_patterns(
+                        text[scope[1]:]) if scope else {}
+
                     self.assertEqual(extract, path,
                                      "text={} with cur={}".format(text, cur))
+                    if scope:
+                        self.assertEqual(matched_info, info,
+                                         "text={}".format(text[scope[1]:]))
 
     def path_exists(self, path):
         """Check whether some virtual path exist."""
@@ -80,8 +96,12 @@ class TestPathsUnix(BaseTestCase):
             ("^/root/dir1", "/root/dir1"),
             ("/root/dir2/su^b/file2.txt", "/root/dir2/sub/file2.txt"),
 
-            ("/root/dir1/file1.txt^:42:10", "/root/dir1/file1.txt"),
-            ("File '/root/dir1/^file1.txt', line 42", "/root/dir1/file1.txt"),  # noqa: E501
+            ("/root/dir1/file1.txt^:42:10", "/root/dir1/file1.txt",
+             {"line": "42", "col": "10"}),
+            ("/root/dir1/file1.txt^:42", "/root/dir1/file1.txt",
+             {"line": "42", "col": None}),
+            ("File '/root/dir1/^file1.txt', line 42", "/root/dir1/file1.txt",
+             {"line": "42"}),
 
             # the whole path must be found
             ("/root/dir1/root/dir1/file^1.txt", "/root/dir1/root/dir1/file1.txt"),  # noqa: E501
@@ -158,8 +178,12 @@ class TestPathsWindows(BaseTestCase):
             ("^C:\\dir1", "C:\\dir1"),
             ("C:\\dir2\\su^b\\file2.txt", "C:\\dir2\\sub\\file2.txt"),
 
-            ("C:\\dir1/file^1.txt:42:10", "C:\\dir1/file1.txt"),
-            ("File '^C:/dir1\\file1.txt', line 42", "C:/dir1\\file1.txt"),
+            ("C:\\dir1/file^1.txt:42:10", "C:\\dir1/file1.txt",
+             {"line": "42", "col": "10"}),
+            ("C:\\dir1/file^1.txt:42", "C:\\dir1/file1.txt",
+             {"line": "42", "col": None}),
+            ("File '^C:/dir1\\file1.txt', line 42", "C:/dir1\\file1.txt",
+             {"line": "42"}),
 
             ("C:\\dir1\\file1.txt ^", None),
             ("C:\\dir1\\file1^", None),

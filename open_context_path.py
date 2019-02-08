@@ -27,23 +27,29 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, event=None):
         """Run the command."""
-        path = self.find_path(event)
+        path, info = self.find_path(event)
         if path:
-            self.open_path(path)
+            self.open_path(path, info)
 
     def is_enabled(self, event=None):
         """Whether the command is enabled."""
-        return bool(self.find_path(event))
+        path, info = self.find_path(event)
+        return bool(path)
 
     def is_visible(self, event=None):
         """Whether the context menu entry is visible."""
-        return bool(self.find_path(event))
+        path, info = self.find_path(event)
+        return bool(path)
 
     def description(self, event=None):
         """Describe the context menu entry."""
-        path = self.find_path(event)
+        path, info = self.find_path(event)
         if path:
-            return "Open " + os.path.basename(os.path.normpath(path))
+            desc = "Open " + os.path.basename(os.path.normpath(path))
+            if info.get("line"):
+                desc += " at line {}".format(info["line"])
+
+            return desc
 
         return ""
 
@@ -51,7 +57,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         """Whether we need the event data."""
         return True
 
-    def open_path(self, path):
+    def open_path(self, path, info):
         """Open a file in Sublime Text or a directory with the file manager."""
         window = self.view.window()
 
@@ -71,10 +77,14 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                 if not drive:
                     path = os.path.abspath(path)
 
+            # encode line and column numbers into the file path
+            if info.get("line"):
+                path += ":{}".format(info["line"])
+                if info.get("col"):
+                    path += ":{}".format(info["col"])
+
             log.debug("Opening file: %s", path)
-            window.run_command("open_file", {
-                "file": path
-            })
+            window.open_file(path, sublime.ENCODED_POSITION)
 
     def get_context(self):
         """Return the current context setting."""
@@ -101,6 +111,17 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # cache
         return tuple(dirs)
 
+    def get_patterns(self):
+        """Collect the current list of patterns from the settings."""
+        settings = sublime.load_settings("OpenContextPath.sublime-settings")
+        view_settings = self.view.settings().get("open_context_path", {})
+
+        # give the view settings precedence over the global settings
+        patterns = view_settings.get("patterns", [])
+        patterns += settings.get("patterns", [])
+
+        return patterns
+
     def find_path(self, event=None):
         """Find a file path at the position where the command was called."""
         view = self.view
@@ -125,7 +146,12 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # get the current list of directories
         dirs = self.get_directories()
 
-        return self.extract_path(text, col, dirs)
+        # try to extract a path and match the text after for additional
+        # information
+        path, scope = self.extract_path(text, col, dirs)
+        info = self.match_patterns(text[scope[1]:]) if scope else {}
+
+        return path, info
 
     @functools.lru_cache()
     def extract_path(self, text, cur, dirs):
@@ -150,6 +176,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # go through the parts before the cursor to find the ones that mark the
         # beginning of a file path
         path = ""
+        begin, end = 0, 0
         for i, part in reversed(list(enumerate(before))):
             # in case we haven't found the beginning of a path yet, it could be
             # that there is a file consisting of multiple parts in which case
@@ -174,17 +201,33 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
                     # check if the cursor is actually inside the found path by
                     # summing up the elements before and within the path
                     len_before_path = len("".join(before[:i]))
-                    if len_before_path + len(existing_path) >= cur:
+                    len_existing_path = len(existing_path)
+                    if len_before_path + len_existing_path >= cur:
                         # keep the longest path
-                        if len(existing_path) > len(path):
+                        if len_existing_path > len(path):
                             log.debug("Best path: %s", existing_path)
                             path = existing_path
+                            begin = len_before_path
+                            end = begin + len_existing_path
 
         if path:
             # search again to return the full path for relative paths
-            return self.search_path(path, dirs)
+            return self.search_path(path, dirs), (begin, end)
 
-        return None
+        return None, None
+
+    def match_patterns(self, text):
+        """Match some text for additional information about a path."""
+        log.debug("Matching patterns to: %s", text)
+
+        # find the first matching pattern and return all named groups
+        for pattern in self.get_patterns():
+            match = re.match(pattern, text)
+            if match:
+                log.debug("Found groups: %s", match.groupdict())
+                return match.groupdict()
+
+        return {}
 
     def search_path(self, path, dirs):
         """Search for an existing path (possibly relative to dirs)."""

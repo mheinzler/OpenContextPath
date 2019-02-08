@@ -2,6 +2,13 @@
     // a list of directories to consider when processing relative paths
     "directories": [""],
 
+    // regex patterns to match additional information like line and column
+    // numbers
+    "patterns": [
+        ":(?P<line>\\d+)(?::(?P<col>\\d+))?",
+        "[\"'], line (?P<line>\\d+)"
+    ],
+
     // the number of characters to analyze around the cursor
     "context": 100,
 
