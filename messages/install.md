@@ -9,10 +9,8 @@ context menu or a keyboard shortcut.
 There are multiple ways to open paths:
 
 - Open the context menu on a path and choose "Open *file*"
-- Position the cursor within a path and press
-    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> (macOS:
-    <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
-- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and double click a path
+- Position the cursor within a path and press Ctrl+Shift+O (macOS: ⌘+Shift+O)
+- Press Ctrl+Shift and double click a path
 
 This works for both absolute and relative paths. See the "directories"
 configuration option to specify which directories to search for relative paths.
