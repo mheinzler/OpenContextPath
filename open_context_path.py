@@ -238,7 +238,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
         if platform == "windows":
             # disable UNC paths on Windows
-            if path.startswith("\\\\"):
+            if path.startswith("\\\\") or path.startswith("//"):
                 return None
 
             # ignore spaces at the end of a path
