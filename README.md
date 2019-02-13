@@ -4,6 +4,10 @@ This Sublime Text package allows you to quickly open files and folders from
 anywhere within a text (e.g. a file, the build panel, etc.) by simply using the
 context menu or a keyboard shortcut.
 
+For example:
+
+![Example usage][example]
+
 ## Installation
 
 ### Package Control
@@ -90,5 +94,6 @@ takes to find a path.
 The default value should be good enough to detect most paths and not produce
 any noticeable delays.
 
+[example]: https://raw.githubusercontent.com/mheinzler/OpenContextPath/master/docs/example.png
 [package-control]: https://packagecontrol.io/installation
 [releases]: https://github.com/mheinzler/OpenContextPath/releases
