@@ -34,6 +34,8 @@ There are multiple ways to open paths:
 - Position the cursor within a path and press
     <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> (macOS:
     <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
+    - With this it is also possible to open many paths at the same time by using
+        multiple selections
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and double click a path
 
 This works for both absolute and relative paths. See the "directories"

@@ -27,24 +27,26 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, event=None):
         """Run the command."""
-        path, info = self.find_path(event)
-        if path:
+        paths = self.find_paths(event)
+        for path, info in paths:
             self.open_path(path, info)
 
     def is_enabled(self, event=None):
         """Whether the command is enabled."""
-        path, info = self.find_path(event)
-        return bool(path)
+        paths = self.find_paths(event)
+        return len(paths) > 0
 
     def is_visible(self, event=None):
         """Whether the context menu entry is visible."""
-        path, info = self.find_path(event)
-        return bool(path)
+        paths = self.find_paths(event)
+        return len(paths) > 0
 
     def description(self, event=None):
         """Describe the context menu entry."""
-        path, info = self.find_path(event)
-        if path:
+        paths = self.find_paths(event)
+        if paths:
+            # only show the name of the first found path
+            path, info = paths[0]
             desc = "Open " + os.path.basename(os.path.normpath(path))
             if info.get("line"):
                 desc += " at line {}".format(info["line"])
@@ -122,36 +124,46 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
 
         return patterns
 
-    def find_path(self, event=None):
-        """Find a file path at the position where the command was called."""
+    def find_paths(self, event=None):
+        """Find file paths at the position where the command was called."""
         view = self.view
 
         if event:
-            # extract the text around the event's position
-            pt = view.window_to_text((event["x"], event["y"]))
+            # search the text around the event's position
+            points = [view.window_to_text((event["x"], event["y"]))]
         else:
-            # extract the text around the cursor's position
-            pt = view.sel()[0].a
+            # search the texts around all selections
+            points = [sel.a for sel in view.sel()]
 
-        line = view.line(pt)
+        return self.find_paths_at(points)
 
-        # clip the text to the specified context
+    def find_paths_at(self, points):
+        """Find file paths at the given text positions."""
+        view = self.view
         context = self.get_context()
-        begin = max(line.a, pt - context)
-        end = min(line.b, pt + context)
 
-        text = view.substr(sublime.Region(begin, end))
-        col = pt - begin
-
-        # get the current list of directories
+        # get the current list of directories to search
         dirs = self.get_directories()
 
-        # try to extract a path and match the text after for additional
-        # information
-        path, scope = self.extract_path(text, col, dirs)
-        info = self.match_patterns(text[scope[1]:]) if scope else {}
+        # search for a path around each of the points
+        paths = []
+        for pt in points:
+            # clip the text to the specified context
+            line = view.line(pt)
+            begin = max(line.a, pt - context)
+            end = min(line.b, pt + context)
 
-        return path, info
+            text = view.substr(sublime.Region(begin, end))
+            col = pt - begin
+
+            # try to extract a path and match the text after for additional
+            # information
+            path, scope = self.extract_path(text, col, dirs)
+            if path:
+                info = self.match_patterns(text[scope[1]:])
+                paths.append((path, info))
+
+        return paths
 
     @functools.lru_cache()
     def extract_path(self, text, cur, dirs):
