@@ -88,10 +88,22 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
             log.debug("Opening file: %s", path)
             window.open_file(path, sublime.ENCODED_POSITION)
 
+    def get_view_settings(self):
+        """Find the settings for the current view."""
+        settings = self.view.settings().get("open_context_path", {})
+        if not settings:
+            # if this is not the window's active view (which is true for
+            # panels) we can try to find some settings there
+            active_view = self.view.window().active_view()
+            if self.view != active_view:
+                settings = active_view.settings().get("open_context_path", {})
+
+        return settings
+
     def get_context(self):
         """Return the current context setting."""
         settings = sublime.load_settings("OpenContextPath.sublime-settings")
-        view_settings = self.view.settings().get("open_context_path", {})
+        view_settings = self.get_view_settings()
 
         # give the view settings precedence over the global settings
         context = view_settings.get("context", None)
@@ -103,7 +115,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def get_directories(self):
         """Collect the current list of directories from the settings."""
         settings = sublime.load_settings("OpenContextPath.sublime-settings")
-        view_settings = self.view.settings().get("open_context_path", {})
+        view_settings = self.get_view_settings()
 
         # give the view settings precedence over the global settings
         dirs = view_settings.get("directories", [])
@@ -122,7 +134,7 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
     def get_patterns(self):
         """Collect the current list of patterns from the settings."""
         settings = sublime.load_settings("OpenContextPath.sublime-settings")
-        view_settings = self.view.settings().get("open_context_path", {})
+        view_settings = self.get_view_settings()
 
         # give the view settings precedence over the global settings
         patterns = view_settings.get("patterns", [])
