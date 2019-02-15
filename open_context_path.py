@@ -109,6 +109,12 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         dirs = view_settings.get("directories", [])
         dirs += settings.get("directories", [])
 
+        # make all relative paths absolute by basing them on the project folder
+        project = self.view.window().project_file_name()
+        if project:
+            project_path = os.path.dirname(project)
+            dirs = [os.path.join(project_path, dir) for dir in dirs]
+
         # return a tuple because lists are not hashable and don't work with the
         # cache
         return tuple(dirs)

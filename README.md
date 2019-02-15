@@ -71,6 +71,9 @@ This is a list of directories to search when processing relative paths. If you
 want to be able to open files from a text that only includes their names or a
 part of their path, add the directory that contains them here.
 
+These directories can also be relative paths. In this case they are relative to
+the folder the current project file is located in.
+
 Specifying too many directories here can possibly lead to noticeable delays.
 
 **patterns**
