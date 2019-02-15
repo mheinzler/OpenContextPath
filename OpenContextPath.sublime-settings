@@ -1,6 +1,6 @@
 {
     // a list of directories to consider when processing relative paths
-    "directories": [""],
+    "directories": [],
 
     // regex patterns to match additional information like line and column
     // numbers
