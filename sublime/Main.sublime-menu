@@ -23,10 +23,15 @@
                                 }
                             },
                             {
-                                "caption": "Mouse Bindings",
+                                "caption": "-"
+                            },
+                            {
+                                "caption": "Example Mouse Bindings",
                                 "command": "edit_settings",
                                 "args": {
-                                    "base_file": "${packages}/OpenContextPath/sublime/Default.sublime-mousemap"
+                                    "base_file": "${packages}/OpenContextPath/sublime/Example.sublime-mousemap",
+                                    "user_file": "${packages}/User/Default ($platform).sublime-mousemap",
+                                    "default": "[\n\t$0\n]\n"
                                 }
                             }
                         ]

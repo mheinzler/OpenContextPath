@@ -1,4 +1,5 @@
 [
+    // Open paths by pressing Ctrl+Shift and double clicking
     {
         "button": "button1", "count": 2, "modifiers": ["control", "shift"],
         "press_command": "drag_select",

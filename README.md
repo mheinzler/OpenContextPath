@@ -36,7 +36,6 @@ There are multiple ways to open paths:
     <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>)
     - With this it is also possible to open many paths at the same time by using
         multiple selections
-- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and double click a path
 
 This works for both absolute and relative paths. See the "directories"
 configuration option to specify which directories to search for relative paths.
@@ -45,7 +44,7 @@ configuration option to specify which directories to search for relative paths.
 
 To overwrite any of the default settings use the menu item `Preferences` →
 `Package Settings` → `OpenContextPath`. There you can also find the default
-keyboard and mouse bindings.
+keyboard bindings and an example for mouse bindings.
 
 It is also possible to use project-specific settings which take precedence over
 the global settings. For that, you must add "open_context_path" to the
