@@ -16,14 +16,10 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         """Set up the test environment."""
+        self.command = OpenContextPathCommand(None)
 
-        # mock a virtual view
-        view = mock.Mock(**{
-            # make the command use only the global settings
-            "settings.return_value": {}
-        })
-
-        self.command = OpenContextPathCommand(view)
+        # make the command use only the global settings
+        self.command.get_view_settings = lambda: {}
 
     def extract_paths(self, tests):
         """Run the command's extract_path on multiples texts."""
