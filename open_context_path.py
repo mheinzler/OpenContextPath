@@ -266,6 +266,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         if path in [".", ".."]:
             return None
 
+        # expand ~ to the user's home directory
+        if path.startswith("~"):
+            path = os.path.expanduser(path)
+
         if platform == "windows":
             # disable UNC paths on Windows
             if path.startswith("\\\\") or path.startswith("//"):
