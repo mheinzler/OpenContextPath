@@ -121,6 +121,9 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         dirs = view_settings.get("directories", [])
         dirs += settings.get("directories", [])
 
+        # expand ~ to the home directory
+        dirs = [os.path.expanduser(dir) for dir in dirs]
+
         # make all relative paths absolute by basing them on the project folder
         project = self.view.window().project_file_name()
         if project:
@@ -265,6 +268,10 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # ignore special directories with no separator
         if path in [".", ".."]:
             return None
+
+        # expand ~ to the user's home directory
+        if path.startswith("~"):
+            path = os.path.expanduser(path)
 
         if platform == "windows":
             # disable UNC paths on Windows
