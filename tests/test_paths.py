@@ -81,6 +81,10 @@ class TestPathsUnix(BaseTestCase):
         super().setUp()
         self.command.file_parts = self.command.file_parts_unix
 
+        # environment variables
+        os.environ["OCPDIR"] = "dir1"
+        os.environ["OCPFILE"] = "file"
+
     def test_absolute_paths(self):
         """Testing absolute paths."""
         self.extract_paths([
@@ -101,6 +105,11 @@ class TestPathsUnix(BaseTestCase):
 
             # the whole path must be found
             ("/root/dir1/root/dir1/file^1.txt", "/root/dir1/root/dir1/file1.txt"),  # noqa: E501
+
+            # environment variables
+            ("/root/$OCP^DIR/file1.txt", "/root/dir1/file1.txt"),
+            ("/root/$OCPDIR/${^OCPFILE}1.txt", "/root/dir1/file1.txt"),
+            ("/root/$OCPDIR/$^OCPFILE1.txt", None),
 
             # Windows drive letters and backslashes have no special meaning
             ("C:/root/dir1/file1.txt^", "/root/dir1/file1.txt"),
@@ -127,6 +136,10 @@ class TestPathsUnix(BaseTestCase):
 
             ("file^2.txt", "/root/dir2/sub/file2.txt"),
             ("/root/dir1/file^2.txt", "/root/dir2/sub/file2.txt"),
+
+            # environment variables
+            ("$OCPDIR^", "/root/dir1"),
+            ("dir1/${^OCPFILE}1.txt", "/root/dir1/file1.txt"),
 
             ("^", None),
 
@@ -163,6 +176,10 @@ class TestPathsWindows(BaseTestCase):
         super().setUp()
         self.command.file_parts = self.command.file_parts_win
 
+        # environment variables
+        os.environ["OCPDIR"] = "dir1"
+        os.environ["OCPFILE"] = "file"
+
     def test_absolute_paths(self):
         """Testing absolute paths."""
         self.extract_paths([
@@ -180,6 +197,11 @@ class TestPathsWindows(BaseTestCase):
              {"line": "42", "col": None}),
             ("File '^C:/dir1\\file1.txt', line 42", "C:/dir1\\file1.txt",
              {"line": "42"}),
+
+            # environment variables
+            ("C:\\$OCP^DIR\\file1.txt", "C:\\dir1\\file1.txt"),
+            ("C:\\$OCPDIR/${^OCPFILE}1.txt", "C:\\dir1/file1.txt"),
+            ("C:\\$OCPDIR\\$^OCPFILE1.txt", None),
 
             ("C:\\dir1\\file1.txt ^", None),
             ("C:\\dir1\\file1^", None),
@@ -201,6 +223,10 @@ class TestPathsWindows(BaseTestCase):
 
             ("file^2.txt", "C:\\dir2\\sub\\file2.txt"),
             ("C:\\dir1\\file^2.txt", "C:\\dir2\\sub\\file2.txt"),
+
+            # environment variables
+            ("$OCPDIR^", "C:\\dir1"),
+            ("dir1\\${^OCPFILE}1.txt", "C:\\dir1\\file1.txt"),
 
             ("^", None),
 

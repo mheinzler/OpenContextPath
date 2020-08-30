@@ -273,6 +273,9 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         if path.startswith("~"):
             path = os.path.expanduser(path)
 
+        # expand the environment variables
+        path = os.path.expandvars(path)
+
         if platform == "windows":
             # disable UNC paths on Windows
             if path.startswith("\\\\") or path.startswith("//"):
