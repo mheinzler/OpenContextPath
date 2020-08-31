@@ -124,6 +124,13 @@ class OpenContextPathCommand(sublime_plugin.TextCommand):
         # expand ~ to the home directory
         dirs = [os.path.expanduser(dir) for dir in dirs]
 
+        # expand Sublime Text and environment variables
+        variables = {}
+        variables.update(self.view.window().extract_variables())
+        variables.update(os.environ)
+
+        dirs = [sublime.expand_variables(dir, variables) for dir in dirs]
+
         # make all relative paths absolute by basing them on the project folder
         project = self.view.window().project_file_name()
         if project:

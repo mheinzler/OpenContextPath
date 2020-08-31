@@ -75,6 +75,13 @@ the folder the current project file is located in.
 
 Specifying too many directories here can possibly lead to noticeable delays.
 
+Variables of the form `$varname` and `${varname}` will be expanded. This
+includes [Sublime Text variables][st-variables] and environment variables. This
+uses the *expand_variables* API so other features like placeholders
+(`${varname:placeholder}`) are also supported.
+
+A literal `$` character needs to be escaped as `\\$`.
+
 **patterns**
 
 These regex patterns are used to match line and column numbers in the text
@@ -101,3 +108,4 @@ any noticeable delays.
 [example]: https://raw.githubusercontent.com/mheinzler/OpenContextPath/master/docs/example.png
 [package-control]: https://packagecontrol.io/installation
 [releases]: https://github.com/mheinzler/OpenContextPath/releases
+[st-variables]: https://www.sublimetext.com/docs/3/build_systems.html#variables
